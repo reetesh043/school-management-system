@@ -1,4 +1,4 @@
-# VidyaOne School ERP
+# School ERP
 
 VidyaOne is a Nursery to Class 12 school ERP for the Indian schooling model. The project is now split into two modules while preserving the existing admissions and ERP functionality.
 
