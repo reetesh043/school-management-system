@@ -1,0 +1,4 @@
+# Persistent H2 database stored under ./data
+spring:
+  datasource:
+    url: jdbc:h2:file:./data/admissions;AUTO_SERVER=TRUE

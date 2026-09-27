@@ -1,0 +1,81 @@
+spring:
+  application:
+    name: school-admission-system
+
+  datasource:
+    # In-memory H2: every start begins from a clean, freshly migrated database.
+    # Use  --spring.profiles.active=file  to keep data between restarts.
+    url: jdbc:h2:mem:admissions;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+
+  h2:
+    console:
+      enabled: true          # http://localhost:8080/h2-console  (JDBC URL above, user sa, empty password)
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    contexts: demo           # "demo" loads sample users, leads and applications. Use any other value (for example "prod") for a clean install.
+
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none         # Liquibase owns the schema. Switch to "validate" to have Hibernate cross-check it.
+    properties:
+      hibernate:
+        jdbc.time_zone: UTC
+
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 6MB
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+admission:
+  upload-dir: ./data/uploads
+  payments:
+    default-gateway: mockpay
+    webhook-secrets:
+      mockpay: dev-only-webhook-secret     # replace per gateway; load from a secrets manager in production
+  dev-tools:
+    enabled: true                          # exposes /api/v1/dev/** (mock payment capture). Turn off outside development.
+  outbox:
+    poll-interval-ms: 3000
+
+# OTP delivery. Console mode works locally without external credentials.
+otp:
+  expiry-minutes: 5
+  resend-seconds: 60
+  max-attempts: 5
+  expose-dev-code: true
+  email:
+    mode: ${OTP_EMAIL_MODE:console}        # console | smtp
+    from: ${OTP_EMAIL_FROM:no-reply@vidyaone.local}
+  sms:
+    mode: ${OTP_SMS_MODE:console}        # console | twilio
+    twilio:
+      account-sid: ${TWILIO_ACCOUNT_SID:}
+      auth-token: ${TWILIO_AUTH_TOKEN:}
+      from: ${TWILIO_FROM_NUMBER:}
+
+# When otp.email.mode=smtp, configure these values (prefer environment variables in production).
+spring.mail:
+  host: ${SMTP_HOST:}
+  port: ${SMTP_PORT:587}
+  username: ${SMTP_USERNAME:}
+  password: ${SMTP_PASSWORD:}
+  properties:
+    mail.smtp.auth: true
+    mail.smtp.starttls.enable: true

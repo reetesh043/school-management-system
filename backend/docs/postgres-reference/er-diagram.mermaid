@@ -1,0 +1,90 @@
+erDiagram
+    school_group ||--o{ school : has
+    school ||--o{ campus : has
+    school ||--o{ academic_year : runs
+    school ||--o{ app_user : employs
+    school ||--o{ workflow : configures
+    school ||--o{ form_definition : configures
+    school ||--o{ message_template : owns
+
+    app_user ||--o{ user_role : holds
+    role ||--o{ user_role : granted_by
+    campus ||--o{ user_role : scopes
+
+    form_definition ||--o{ form_field : contains
+    workflow ||--o{ stage_definition : defines
+    stage_definition ||--o{ stage_transition : from_stage
+    stage_definition ||--o{ stage_transition : to_stage
+
+    campus ||--o{ class_config : offers
+    academic_year ||--o{ class_config : for_year
+    workflow ||--o{ class_config : drives
+    form_definition ||--o{ class_config : collects
+    class_config ||--o{ required_document : requires
+    class_config ||--o{ evaluation_rubric : scored_by
+    class_config ||--o{ fee_plan : charges
+    class_config ||--o{ seat_allocation : holds
+
+    school ||--o{ lead : receives
+    lead ||--o{ lead_followup : tracked_by
+    app_user ||--o{ lead : assigned
+
+    class_config ||--o{ application : receives
+    stage_definition ||--o{ application : current_stage
+    lead ||--o| application : converts_to
+    app_user ||--o{ application : guardian_login
+    application ||--|| applicant : about
+    application ||--o{ guardian : has
+    application ||--o{ application_document : uploads
+    application ||--o| seat_allocation : occupies
+
+    interaction_slot ||--o{ interaction_booking : booked
+    application ||--o{ interaction_booking : books
+    application ||--o{ assessment : evaluated
+    assessment ||--o{ assessment_score : scored
+    evaluation_rubric ||--o{ assessment_score : criterion
+
+    application ||--o{ invoice : billed
+    fee_plan ||--o{ invoice : priced_by
+    invoice ||--o{ payment : paid_by
+    payment ||--o{ refund : refunded_by
+
+    application ||--o{ stage_history : moves
+    application ||--o{ communication_log : notified
+    message_template ||--o{ communication_log : rendered
+
+    application {
+        uuid id PK
+        text application_no UK
+        uuid class_config_id FK
+        uuid stage_id FK
+        uuid prev_stage_id FK
+        jsonb responses
+        int form_version
+        text admission_no UK
+        bigint version
+    }
+    stage_transition {
+        uuid id PK
+        text[] allowed_roles
+        text[] guard_keys
+        text[] action_keys
+    }
+    class_config {
+        uuid id PK
+        text class_code
+        int min_age_years
+        int seats_total
+        numeric pass_mark
+    }
+    payment {
+        uuid id PK
+        text gateway_order_id
+        text idempotency_key UK
+        text status
+    }
+    seat_allocation {
+        uuid id PK
+        text status
+        timestamptz held_until
+    }

@@ -1,0 +1,166 @@
+### School Admission System — sample requests
+### Works in IntelliJ IDEA / VS Code (REST Client extension). Run the app first: mvn spring-boot:run
+### All demo users share the password Demo@1234.
+
+@host = http://localhost:8080
+@parent = parent:Demo@1234
+@meera = meera:Demo@1234
+@frontoffice = frontoffice:Demo@1234
+@committee = committee:Demo@1234
+@accounts = accounts:Demo@1234
+@admin = admin:Demo@1234
+
+
+### 1. Public enquiry form (no auth)
+POST {{host}}/api/v1/public/enquiries
+Content-Type: application/json
+
+{
+  "guardianName": "Test Parent",
+  "phone": "9800000999",
+  "email": "test.parent@example.com",
+  "childName": "Test Child",
+  "childDob": "2021-05-01",
+  "classCode": "C1",
+  "source": "WEBSITE",
+  "consent": true
+}
+
+
+### 2. List leads (counsellor)
+GET {{host}}/api/v1/leads
+Authorization: Basic {{meera}}
+
+
+### 3. Convert a lead to an application (use an id from step 2, or the demo lead for +919820000109)
+POST {{host}}/api/v1/leads/9/convert?academicYear=2027-28
+Authorization: Basic {{meera}}
+
+
+### 4. Classes and seat availability
+GET {{host}}/api/v1/classes?academicYear=2027-28
+Authorization: Basic {{meera}}
+
+
+### 5. Guardian: list my applications (Neha Sharma / APP27-000001)
+GET {{host}}/api/v1/applications
+Authorization: Basic {{parent}}
+
+
+### 6. Guardian: save draft answers on APP27-000001 (id is 1 in a fresh demo database)
+PATCH {{host}}/api/v1/applications/1
+Authorization: Basic {{parent}}
+Content-Type: application/json
+
+{
+  "childName": "Aanya Sharma",
+  "childDob": "2020-08-14",
+  "guardianName": "Neha Sharma",
+  "guardianPhone": "+919810000001",
+  "guardianEmail": "neha.sharma@example.com",
+  "responses": {
+    "residential_address": "12 MG Road, Pune",
+    "transport_required": "Yes"
+  }
+}
+
+
+### 7. Guardian: submit the application (ENQUIRY -> APPLICATION)
+POST {{host}}/api/v1/applications/1/submit
+Authorization: Basic {{parent}}
+
+
+### 8. What can this application do next, and what is blocking each move?
+GET {{host}}/api/v1/applications/1/transitions/available
+Authorization: Basic {{meera}}
+
+
+### 9. Front office: verify a document (id 1 is APP27-000002's birth certificate in the demo data)
+PUT {{host}}/api/v1/documents/1/verification
+Authorization: Basic {{frontoffice}}
+Content-Type: application/json
+
+{ "status": "VERIFIED" }
+
+
+### 10. Move an application forward once its guards pass (APPLICATION -> REGISTRATION)
+POST {{host}}/api/v1/applications/2/transitions
+Authorization: Basic {{frontoffice}}
+Content-Type: application/json
+
+{ "toStage": "REGISTRATION" }
+
+
+### 11. Committee: record an interaction score (application 4, APP27-000004)
+POST {{host}}/api/v1/applications/4/assessments
+Authorization: Basic {{committee}}
+Content-Type: application/json
+
+{ "kind": "INTERACTION", "score": 74, "remarks": "Confident, curious, recommended." }
+
+
+### 12. Committee: move REGISTRATION -> INITIATED once the score passes
+POST {{host}}/api/v1/applications/4/transitions
+Authorization: Basic {{committee}}
+Content-Type: application/json
+
+{ "toStage": "INITIATED" }
+
+
+### 13. Committee: open payment (INITIATED -> PAYMENT). Holds a seat and issues the invoice.
+POST {{host}}/api/v1/applications/4/transitions
+Authorization: Basic {{committee}}
+Content-Type: application/json
+
+{ "toStage": "PAYMENT" }
+
+
+### 14. Guardian: see the invoice
+GET {{host}}/api/v1/applications/4/invoices
+Authorization: Basic {{parent}}
+
+
+### 15. Guardian: create a gateway order for the invoice (use the invoice id from step 14)
+POST {{host}}/api/v1/invoices/1/payments
+Authorization: Basic {{parent}}
+Idempotency-Key: demo-key-0001
+Content-Type: application/json
+
+{ "method": "UPI" }
+
+
+### 16. DEV ONLY: simulate the gateway capturing the payment and firing its webhook.
+### This is what turns the invoice PAID and moves PAYMENT -> ADMITTED automatically.
+POST {{host}}/api/v1/dev/payments/{{payment_id}}/capture
+Authorization: Basic {{parent}}
+
+
+### 17. Admission number now assigned
+GET {{host}}/api/v1/applications/4
+Authorization: Basic {{parent}}
+
+
+### 18. Reports: seats, sources, funnel
+GET {{host}}/api/v1/reports/seats?academicYear=2027-28
+Authorization: Basic {{admin}}
+
+###
+GET {{host}}/api/v1/reports/sources
+Authorization: Basic {{admin}}
+
+###
+GET {{host}}/api/v1/reports/funnel?academicYear=2027-28&classCode=C1
+Authorization: Basic {{admin}}
+
+
+### 19. Messages sent for an application (simulated WhatsApp/SMS/email)
+GET {{host}}/api/v1/applications/4/messages
+Authorization: Basic {{committee}}
+
+
+### 20. Waitlist an application (reason required)
+POST {{host}}/api/v1/applications/2/transitions
+Authorization: Basic {{committee}}
+Content-Type: application/json
+
+{ "toStage": "WAITLISTED", "reason": "No seats left in KG for this cycle" }
